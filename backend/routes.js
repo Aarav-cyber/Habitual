@@ -312,6 +312,38 @@ router.get('/ai/suggestions', auth, async (req, res) => {
 router.post('/ai/chat', auth, async (req, res) => {
   const { messages, context } = req.body;
   try {
+    const system = `You are a compassionate, science-backed habit coach. Be concise (2-3 sentences). The user's current habit data:\n${context}`;
+    const lastMessages = (messages || []).slice(-10);
+
+    // Prefer DeepSeek if configured; fall back to Anthropic for backward compatibility.
+    if (process.env.DEEPSEEK_API_KEY) {
+      const base = (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/+$/, '');
+      const model = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+
+      const response = await fetch(`${base}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: system },
+            ...lastMessages
+          ],
+          temperature: 0.7
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(500).json({ error: data?.error?.message || 'DeepSeek request failed' });
+      }
+      const reply = data?.choices?.[0]?.message?.content || "I couldn't generate a response.";
+      return res.json({ reply });
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -320,15 +352,15 @@ router.post('/ai/chat', auth, async (req, res) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5',
         max_tokens: 600,
-        system: `You are a compassionate, science-backed habit coach. Be concise (2-3 sentences). The user's current habit data:\n${context}`,
-        messages: messages.slice(-10) // keep last 10 for context window
+        system,
+        messages: lastMessages
       })
     });
     const data = await response.json();
     const reply = data.content?.[0]?.text || "I couldn't generate a response.";
-    res.json({ reply });
+    return res.json({ reply });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

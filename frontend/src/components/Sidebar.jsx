@@ -3,9 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Flame, BarChart3, Brain, Settings, LogOut, Sparkles, Target } from 'lucide-react';
 
 const NAV = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/today', icon: Target, label: 'Today' },
   { to: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/insights', icon: Brain, label: 'AI Insights' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
