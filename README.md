@@ -40,7 +40,7 @@ npm run dev          # http://localhost:5000
 ```bash
 cd frontend
 npm install
-npm run dev          # http://localhost:5173
+npm run dev          # http://localhost:5173 hhshhs
 ```
 
 ---
