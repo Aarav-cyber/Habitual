@@ -12,7 +12,7 @@ import { differenceInDays, endOfMonth, startOfMonth, format, addMonths } from 'd
 dotenv.config();
 
 const app = express();
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientUrl = process.env.CLIENT_URL || 'https://habitual-nu.vercel.app';
 app.use(cors({ origin: clientUrl }));
 app.use(compression());
 app.use(express.json());
