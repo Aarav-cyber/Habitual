@@ -13,7 +13,12 @@ dotenv.config();
 
 const app = express();
 const clientUrl = process.env.CLIENT_URL || 'https://habitual-nu.vercel.app';
-app.use(cors({ origin: "*" })); // Allow all origins for simplicity; adjust in production
+app.use(cors({ origin: clientUrl, credentials: true }));
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  next();
+});
 app.use(compression());
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500 }));
