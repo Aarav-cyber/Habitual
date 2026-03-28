@@ -49,6 +49,9 @@ cron.schedule('0 0 1 * *', async () => {
   console.log('[CRON] Cycles rolled over at', new Date().toISOString());
 });
 
+app.get('/', (req, res) => {
+  res.send('Habit Tracker API is running');
+}); 
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
