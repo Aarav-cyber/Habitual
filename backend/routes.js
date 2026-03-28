@@ -1,7 +1,7 @@
 import express from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
-import { User, Habit, Cycle, Entry } from './models.js';
+import { User, Habit, Cycle, Entry, PlannedTask } from './models.js';
 import { auth } from './middleware.js';
 import { startOfDay, endOfDay, differenceInDays, format, addMonths, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -48,14 +48,66 @@ router.get('/today', auth, async (req, res) => {
   const from = startOfDay(d);
   const to = endOfDay(d);
 
-  const [habits, entries, user] = await Promise.all([
+  const [habits, entries, user, plannedTasks] = await Promise.all([
     Habit.find({ userId: req.user._id, isActive: true }).sort('order').lean(),
     Entry.find({ userId: req.user._id, date: { $gte: from, $lte: to } }).sort('date').lean(),
-    User.findById(req.user._id, { mood: 1 }).lean()
+    User.findById(req.user._id, { mood: 1 }).lean(),
+    PlannedTask.find({ userId: req.user._id, scheduledDate: { $gte: from, $lte: to } }).sort('createdAt').lean()
   ]);
 
   const mood = (user?.mood || []).find(m => startOfDay(new Date(m.date)).getTime() === from.getTime()) || null;
-  res.json({ habits, entries, mood });
+  res.json({ habits, entries, mood, plannedTasks });
+});
+
+// ─── PLANNED TASKS (calendar / one-off day tasks) ────────────────────────────
+router.get('/planned-tasks', auth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to query params required (yyyy-MM-dd)' });
+  const filter = {
+    userId: req.user._id,
+    scheduledDate: {
+      $gte: startOfDay(new Date(from)),
+      $lte: endOfDay(new Date(to))
+    }
+  };
+  const tasks = await PlannedTask.find(filter).sort({ scheduledDate: 1, createdAt: 1 }).lean();
+  res.json(tasks);
+});
+
+router.post('/planned-tasks', auth, async (req, res) => {
+  const { title, note, scheduledDate, color } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: 'title is required' });
+  if (!scheduledDate) return res.status(400).json({ error: 'scheduledDate is required' });
+  const d = startOfDay(new Date(scheduledDate));
+  const task = await PlannedTask.create({
+    userId: req.user._id,
+    title: title.trim(),
+    note,
+    scheduledDate: d,
+    color: color || '#7c6af7'
+  });
+  res.json(task);
+});
+
+router.patch('/planned-tasks/:id', auth, async (req, res) => {
+  const allowed = ['title', 'note', 'completed', 'scheduledDate', 'color'];
+  const updates = {};
+  for (const k of allowed) {
+    if (req.body[k] !== undefined) updates[k] = k === 'scheduledDate' ? startOfDay(new Date(req.body[k])) : req.body[k];
+  }
+  const task = await PlannedTask.findOneAndUpdate(
+    { _id: req.params.id, userId: req.user._id },
+    updates,
+    { new: true }
+  ).lean();
+  if (!task) return res.status(404).json({ error: 'Not found' });
+  res.json(task);
+});
+
+router.delete('/planned-tasks/:id', auth, async (req, res) => {
+  const r = await PlannedTask.deleteOne({ _id: req.params.id, userId: req.user._id });
+  if (!r.deletedCount) return res.status(404).json({ error: 'Not found' });
+  res.json({ success: true });
 });
 
 router.post('/habits', auth, async (req, res) => {

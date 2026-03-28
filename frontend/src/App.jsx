@@ -9,6 +9,7 @@ import Today from "./pages/Today";
 import Analytics from "./pages/Analytics";
 import Insights from "./pages/Insights";
 import Settings from "./pages/Settings";
+import Calendar from "./pages/Calendar";
 
 function Protected() {
   const { user, loading } = useAuth();
@@ -88,6 +89,7 @@ export default function App() {
       <Route element={<Protected />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/today" element={<Today />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/insights" element={<Insights />} />
         <Route path="/settings" element={<Settings />} />

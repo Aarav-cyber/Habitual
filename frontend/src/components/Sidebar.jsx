@@ -8,10 +8,12 @@ import {
   LogOut,
   Target,
   X,
+  CalendarDays,
 } from "lucide-react";
 
 const NAV = [
   { to: "/today", icon: Target, label: "Today" },
+  { to: "/calendar", icon: CalendarDays, label: "Plan" },
   { to: "/analytics", icon: BarChart3, label: "Analytics" },
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/insights", icon: Brain, label: "AI Insights" },

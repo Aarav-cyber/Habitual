@@ -64,7 +64,20 @@ entrySchema.index({ habitId: 1, date: 1 }, { unique: true });
 entrySchema.index({ userId: 1, date: 1 });
 entrySchema.index({ userId: 1, habitId: 1, date: 1 });
 
+// One-off tasks scheduled for a specific calendar day (calendar / future planning)
+const plannedTaskSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true, trim: true },
+  note: String,
+  scheduledDate: { type: Date, required: true },
+  completed: { type: Boolean, default: false },
+  color: { type: String, default: '#7c6af7' },
+  createdAt: { type: Date, default: Date.now }
+});
+plannedTaskSchema.index({ userId: 1, scheduledDate: 1 });
+
 export const User = mongoose.model('User', userSchema);
 export const Habit = mongoose.model('Habit', habitSchema);
 export const Cycle = mongoose.model('Cycle', cycleSchema);
 export const Entry = mongoose.model('Entry', entrySchema);
+export const PlannedTask = mongoose.model('PlannedTask', plannedTaskSchema);
